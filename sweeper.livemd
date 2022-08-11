@@ -1,0 +1,187 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Minesweeper
+
+## Basic map manipulations
+
+```elixir
+defmodule Minesweeper do
+  def p(['*', '*']), do: ['*', '*']
+  def p(['*', counter]), do: ['*', counter + 1]
+  def p([counter, '*']), do: [counter + 1, '*']
+  def p([_c1, _c2] = any), do: any
+
+  def calc_bombs([c1, c2 | []]), do: p([c1, c2])
+
+  def calc_bombs([c1, c2 | tail]) do
+    [a, b] = p([c1, c2])
+    [a | calc_bombs([b | tail])]
+  end
+
+  def calc_map_bombs(grid_map), do: Enum.map(grid_map, &calc_bombs/1)
+
+  def print(grid_map), do: Enum.each(grid_map, &IO.inspect/1)
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, Minesweeper, <<70, 79, 82, 49, 0, 0, 10, ...>>, {:print, 1}}
+```
+
+```elixir
+original_map = [
+  [0, 0, '*', 0],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
+  ['*', 0, 0, 0]
+]
+
+expected = [
+  [0, 1, '*', 1],
+  [0, 1, 1, 1],
+  [1, 1, 0, 0],
+  ['*', 1, 0, 0]
+]
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[[0, 1, '*', 1], [0, 1, 1, 1], [1, 1, 0, 0], ['*', 1, 0, 0]]
+```
+
+retorna uma linha calculando bombas adjacentes
+
+```elixir
+row = ['*', 0, 0]
+
+Minesweeper.calc_bombs(row)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+['*', 1, 0]
+```
+
+```elixir
+row = ['*', 0, '*', 0, 0]
+Minesweeper.calc_bombs(row)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+['*', 2, '*', 1, 0]
+```
+
+```elixir
+original_map
+|> Minesweeper.calc_map_bombs()
+|> Minesweeper.print()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[0, 1, '*', 1]
+[0, 0, 0, 0]
+[0, 0, 0, 0]
+['*', 1, 0, 0]
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+## Generating and rotating a map
+
+```elixir
+defmodule Grid do
+  def new(cols_count, rows_count) do
+    row = :lists.duplicate(cols_count, 0)
+    :lists.duplicate(rows_count, row)
+  end
+
+  def rotate(grid, turns \\ 1)
+  def rotate(grid, 0), do: grid
+
+  def rotate(grid, turns) do
+    grid
+    |> Enum.zip()
+    |> Enum.map(&Tuple.to_list/1)
+    |> :lists.reverse()
+    |> rotate(turns - 1)
+  end
+end
+
+map = Grid.new(3, 3)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+```
+
+```elixir
+map = [
+  [1, 0, 0],
+  [2, 0, 0],
+  [3, 0, 9]
+]
+
+expected = [
+  [0, 0, 9],
+  [0, 0, 0],
+  [1, 2, 3]
+]
+
+map
+|> Grid.rotate()
+|> Minesweeper.print()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[0, 0, 9]
+[0, 0, 0]
+[1, 2, 3]
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+## Wrapping up
+
+```elixir
+original_map
+|> Minesweeper.calc_map_bombs()
+|> Grid.rotate()
+|> Minesweeper.calc_map_bombs()
+|> Grid.rotate(3)
+|> Minesweeper.print()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[0, 1, '*', 1]
+[0, 0, 1, 0]
+[1, 0, 0, 0]
+['*', 1, 0, 0]
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
